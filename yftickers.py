@@ -3,7 +3,10 @@ import pandas as pd
 
 from tabulate import tabulate
 
-tickers = ["AAPL", "MSFT", "GOOGL"]
+# Read tickers from CSV file
+tickers_df = pd.read_csv("tickers.csv")  # Replace with your CSV filepath
+tickers = tickers_df["Ticker"].tolist()  # Extract ticker column as list
+
 all_data = []
 
 for ticker in tickers:
