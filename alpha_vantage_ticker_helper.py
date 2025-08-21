@@ -4,7 +4,7 @@ import time
 
 from tabulate import tabulate
 
-API_KEY = "QRR5XILJY4O9Y4NT'"  # Replace with your Alpha Vantage API key
+API_KEY = ""  # Replace with your Alpha Vantage API key
 
 def get_daily_stock_data(ticker, start_date, end_date):
     url = f"https://www.alphavantage.co/query"
@@ -62,6 +62,7 @@ tickers = tickers_df["Ticker"].tolist()
 print(tickers)
 
 all_data = []
+API_KEY = input("Enter Alpha Vantage API KEY")
 
 for ticker in tickers:
     df = get_daily_stock_data(ticker, "2025-08-01", "2025-08-01")
