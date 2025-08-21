@@ -4,9 +4,26 @@ import time
 
 from tabulate import tabulate
 
-TICKER_CSV_FILE = "tickers.csv"
-
+TICKER_CSV_FILE = "ticker.csv"
 API_KEY = ""  # Replace with your Alpha Vantage API key
+
+def measure_time(func, *args, **kwargs):
+    """
+    Measures the execution time of a given function.
+
+    Args:
+        func (callable): The function to be timed.
+        *args: Positional arguments to pass to the function.
+        **kwargs: Keyword arguments to pass to the function.
+
+    Returns:
+        tuple: A tuple containing the function's return value and the elapsed time in seconds.
+    """
+    start_time = time.perf_counter()
+    result = func(*args, **kwargs)
+    end_time = time.perf_counter()
+    elapsed_time = end_time - start_time
+    return result, elapsed_time
 
 def get_daily_stock_data(ticker, start_date, end_date):
     url = f"https://www.alphavantage.co/query"
@@ -19,7 +36,7 @@ def get_daily_stock_data(ticker, start_date, end_date):
     }
     
     print("Retrieving Ticker Data for ", ticker ,"\n")
-    
+
     response = requests.get(url, params=params)
     data = response.json()
 
@@ -43,7 +60,9 @@ def get_daily_stock_data(ticker, start_date, end_date):
   
     df.index = pd.to_datetime(df.index)
     df = df.sort_index()
-    df = df.loc[(df.index >= pd.to_datetime(start_date)) & (df.index <= pd.to_datetime(end_date))]
+
+    #Filter data between the given time range
+    #df = df.loc[(df.index >= pd.to_datetime(start_date)) & (df.index <= pd.to_datetime(end_date))]
     
     for col in ["Open", "High", "Low", "Close","Volume"]:
         df[col] = pd.to_numeric(df[col])
@@ -62,14 +81,30 @@ print(tickers)
 
 all_data = []
 API_KEY = input("Enter Alpha Vantage API Key")
+total_time = 0
+
 for ticker in tickers:
-    df = get_daily_stock_data(ticker, "2025-03-01", "2025-08-20")
+  # Time a call to my_method
+    df, time_taken = measure_time(get_daily_stock_data, ticker, "2025-03-01", "2025-08-20")
+    print(f"Method returned: {df}")
+    print(f"Time taken: {time_taken:.6f} seconds")
+    total_time += time_taken
+    #df = get_daily_stock_data(ticker, "2025-03-01", "2025-08-20")
+    
     # print("\t" *2, "#"*10, "START FILTERED DATA (", ticker, ") ", "#"*10,"\n")
     # print(df)
     # print("\t" *2, "#"*10, "END FILTERED DATA (", ticker, ") ", "#"*10,"\n")
     all_data.append(df)
     time.sleep(12)  # To respect Alpha Vantage free tier call limits
 
-combined_data = pd.concat(all_data)
-combined_data = combined_data.sort_values(by="Date")
-combined_data.to_csv("myout.csv")
+print (f"TOTAL ELAPSED TIME: {total_time:.6f} seconds")
+
+def export_to_csv():
+
+  combined_data = pd.concat(all_data)
+  combined_data = combined_data.sort_values(by="Date")
+  return combined_data.to_csv("myout.csv")
+  
+csv, time_taken = measure_time(export_to_csv)
+print(f"Time taken for CSV export: {time_taken:.6f} seconds")
+
