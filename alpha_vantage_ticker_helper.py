@@ -4,6 +4,8 @@ import time
 
 from tabulate import tabulate
 
+TICKER_CSV_FILE = "tickers.csv"
+
 API_KEY = ""  # Replace with your Alpha Vantage API key
 
 def get_daily_stock_data(ticker, start_date, end_date):
@@ -16,13 +18,10 @@ def get_daily_stock_data(ticker, start_date, end_date):
         "datatype": "json"
     }
     
+    print("Retrieving Ticker Data for ", ticker ,"\n")
+    
     response = requests.get(url, params=params)
     data = response.json()
-
-    print("******************* RESPONSE DATA AS JSON STARTS *********************\n")
-    print(data)
-    
-    print("******************* RESPONSE DATA AS JSON ENDS *********************\n")
 
     if "Time Series (Daily)" not in data:
         print(f"Error fetching data for {ticker}: {data.get('Note') or data.get('Error Message') or 'Unknown error'}")
@@ -56,21 +55,21 @@ def get_daily_stock_data(ticker, start_date, end_date):
     return df[["Date", "Ticker", "Open", "High", "Low", "Close", "Volume"]]
 
 # Read tickers from CSV
-tickers_df = pd.read_csv("ticker.csv")  # CSV should have a column named 'Ticker'
+tickers_df = pd.read_csv(TICKER_CSV_FILE)  # CSV should have a column named 'Ticker'
 tickers = tickers_df["Ticker"].tolist()
 
 print(tickers)
 
 all_data = []
-API_KEY = input("Enter Alpha Vantage API KEY")
-
+API_KEY = input("Enter Alpha Vantage API Key")
 for ticker in tickers:
-    df = get_daily_stock_data(ticker, "2025-08-01", "2025-08-01")
-    print("\t" *2, "#"*10, "START FILTERED DATA (", ticker, ") ", "#"*10,"\n")
-    print(df)
-    print("\t" *2, "#"*10, "END FILTERED DATA (", ticker, ") ", "#"*10,"\n")
+    df = get_daily_stock_data(ticker, "2025-03-01", "2025-08-20")
+    # print("\t" *2, "#"*10, "START FILTERED DATA (", ticker, ") ", "#"*10,"\n")
+    # print(df)
+    # print("\t" *2, "#"*10, "END FILTERED DATA (", ticker, ") ", "#"*10,"\n")
     all_data.append(df)
     time.sleep(12)  # To respect Alpha Vantage free tier call limits
 
 combined_data = pd.concat(all_data)
 combined_data = combined_data.sort_values(by="Date")
+combined_data.to_csv("myout.csv")
