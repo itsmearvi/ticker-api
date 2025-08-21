@@ -4,7 +4,7 @@ import time
 
 from tabulate import tabulate
 
-TICKER_CSV_FILE = "ticker.csv"
+TICKER_CSV_FILE = "tickers.csv"
 API_KEY = ""  # Replace with your Alpha Vantage API key
 
 def measure_time(func, *args, **kwargs):
@@ -39,6 +39,7 @@ def get_daily_stock_data(ticker, start_date, end_date):
 
     response = requests.get(url, params=params)
     data = response.json()
+    print(data)
 
     if "Time Series (Daily)" not in data:
         print(f"Error fetching data for {ticker}: {data.get('Note') or data.get('Error Message') or 'Unknown error'}")
@@ -76,6 +77,7 @@ def get_daily_stock_data(ticker, start_date, end_date):
 # Read tickers from CSV
 tickers_df = pd.read_csv(TICKER_CSV_FILE)  # CSV should have a column named 'Ticker'
 tickers = tickers_df["Ticker"].tolist()
+#tickers = ["AMZN", "RIVN", "MSFT", "GOOGL", "GOOG"]
 
 print(tickers)
 
@@ -103,8 +105,8 @@ def export_to_csv():
 
   combined_data = pd.concat(all_data)
   combined_data = combined_data.sort_values(by="Date")
-  return combined_data.to_csv("myout.csv")
-  
+  return combined_data.to_csv("myout2.csv")
+
 csv, time_taken = measure_time(export_to_csv)
 print(f"Time taken for CSV export: {time_taken:.6f} seconds")
 
