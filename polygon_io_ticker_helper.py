@@ -19,7 +19,7 @@ def get_daily_stock_data_polygon(ticker, start_date, end_date):
 
     #json.dump(data, open(f"{ticker}.json", "w"))
 
-    print("*"*10, f"RAW RESULT FROM POLYGON IO IS RETRIEVED FOR {ticker}f", "*"*10)
+    print("*"*10, f"RAW RESULT FROM POLYGON IO IS RETRIEVED FOR {ticker}", "*"*10)
 
     if "results" not in data:
         print(f"Error fetching data for {ticker}: {data.get('error') or 'Unknown error'}")
@@ -45,24 +45,80 @@ def get_daily_stock_data_polygon(ticker, start_date, end_date):
     #print(df)
     return df
 
+def get_sentiment_analysis_polygon(ticker, start_date, end_date):
+    '''
+    Fetches sentiment analysis for a ticker in a date range from polygon.io news/sentiment endpoint.
+    '''
+    url = "https://api.polygon.io/v2/reference/news"
+    params = {
+        "ticker": ticker,
+        "published_utc.gte": start_date,
+        "published_utc.lte": end_date,
+        "limit": 100,  # max articles per request (adjust as needed)
+        "sort": "published_utc",
+        "apiKey": API_KEY
+    }
+    
+    response = requests.get(url, params=params)
+    data = response.json()
+
+    print("!"*10, f"SENTIMENT DATA FROM POLYGON IO IS RETRIEVED FOR {ticker}", "!"*10)
+    
+    if "results" not in data:
+        print(f"Error fetching sentiment for {ticker}: {data.get('error') or 'Unknown error'}")
+        return pd.DataFrame()
+    
+    articles = data["results"]
+    
+    # Extract relevant sentiment info into DataFrame
+    records = []
+    for article in articles:
+        records.append({
+            "Date": pd.to_datetime(article.get("published_utc")).date(),
+            "Ticker": ticker,
+            "Headline": article.get("title"),
+            "Sentiment": article.get("sentiment", {}).get("overall", None),
+            "Source": article.get("source", None),
+            "ArticleURL": article.get("article_url", None)
+        })
+    
+    df = pd.DataFrame(records)
+    return df
+
 # Read tickers from CSV file, assuming column "Ticker"
 tickers_df = pd.read_csv("sample_data/tickers.csv")
 tickers = tickers_df["Ticker"].tolist()
 print(tickers)
 
-API_KEY = input("Enter Polygon.io API KEY")
-all_data = []
+API_KEY = input("Enter Polygon.io API KEY --> ")
+all_stock_data = []
+all_sentiment_data = []
+start_date = "1999-11-01"
+end_date = "2025-08-20"
 
 for ticker in tickers:
-    df = get_daily_stock_data_polygon(ticker, "1999-11-01", "2025-08-20")
-    all_data.append(df)
+    stock_df = get_daily_stock_data_polygon(ticker, start_date=start_date, end_date=end_date)
+    if stock_df.empty:
+        continue
+    
+    all_stock_data.append(stock_df)
+    sentiment_df = get_sentiment_analysis_polygon(ticker, start_date, end_date)
+    all_sentiment_data.append(sentiment_df)
+
     time.sleep(12)  # Respect API rate limits
 
-combined_data = pd.concat(all_data)
-combined_data = combined_data.sort_values(by="Date")
+combined_stock_data = pd.concat(all_stock_data).sort_values(by="Date")
 
-print(combined_data.head())
-combined_data = pd.concat(all_data)
-combined_data = combined_data.sort_values(by="Date")
-combined_data.to_csv("sample_data/polygon_io_stock_history.csv")
+combined_sentiment_data = pd.concat(all_sentiment_data).sort_values(by="Date")
+
+print(combined_stock_data.head())
+print(combined_sentiment_data.head())
+
+combined_stock_data = pd.concat(all_stock_data)
+combined_stock_data = combined_stock_data.sort_values(by="Date")
+combined_stock_data.to_csv("sample_data/polygon_io_stock_history.csv")
+
+combined_sentiment_data = pd.concat(combined_sentiment_data)
+combined_sentiment_data = combined_sentiment_data.sort_values(by="Date")
+combined_sentiment_data.to_csv("sample_data/polygon_io_sentiment_history.csv")
 
